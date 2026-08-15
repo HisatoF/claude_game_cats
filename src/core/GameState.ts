@@ -19,6 +19,7 @@ export interface LastBattleSummary {
   damageTaken: number;
   rewardPartIds: string[];
   opponentName: string;
+  allCleared: boolean;
 }
 
 /**

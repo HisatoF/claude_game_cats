@@ -54,11 +54,16 @@ export const BattleScreen: SceneRenderer = (root, ctx) => {
     const result = sim.result;
     if (!result) return;
     let rewardIds: string[] = [];
+    let allCleared = false;
     if (result.winner === 'player') {
       soundManager.play('victory');
       const outcome = grantVictoryRewards(state, opponent);
       rewardIds = outcome.newlyUnlocked;
       state.wins += 1;
+      // 倒した相手がロースター最後の1体だったかどうかは、opponentIndexを
+      // 進める前に判定する必要がある(進めた後だと「次の相手」基準の判定に
+      // なってしまい、最終ボス撃破の1戦前で誤ってクリア扱いになる)。
+      allCleared = !state.hasNextOpponent();
       state.advanceOpponent();
     } else {
       soundManager.play('defeat');
@@ -71,6 +76,7 @@ export const BattleScreen: SceneRenderer = (root, ctx) => {
       damageTaken: result.playerDamageTaken,
       rewardPartIds: rewardIds,
       opponentName: opponent.name,
+      allCleared,
     };
     timers.push(
       window.setTimeout(() => {

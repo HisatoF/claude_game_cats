@@ -40,7 +40,8 @@ export const ResultScreen: SceneRenderer = (root, ctx) => {
   const bannerClass = isVictory ? 'victory' : isDraw ? 'draw' : 'defeat';
   const bannerText = isVictory ? 'VICTORY' : isDraw ? 'DRAW' : 'DEFEAT';
   const durationSec = (battle.durationMs / 1000).toFixed(1);
-  const allCleared = isVictory && !state.hasNextOpponent();
+  const allCleared = battle.allCleared;
+  const againLabel = allCleared ? 'チャンピオンにもう一度挑む' : isVictory ? '次の敵に挑む' : 'もう一度挑戦';
 
   root.innerHTML = `
     <div class="screen result-screen">
@@ -67,7 +68,7 @@ export const ResultScreen: SceneRenderer = (root, ctx) => {
       ${allCleared ? `<p class="clear-message">全ての挑戦者を撃破しました!おめでとうございます!</p>` : ''}
       <div class="result-buttons">
         <button id="btn-garage" class="btn">ガレージでマシンを強化</button>
-        <button id="btn-again" class="btn btn-primary btn-large">${isVictory ? '次の敵に挑む' : 'もう一度挑戦'}</button>
+        <button id="btn-again" class="btn btn-primary btn-large">${againLabel}</button>
       </div>
     </div>
   `;
