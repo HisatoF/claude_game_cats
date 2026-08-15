@@ -104,7 +104,14 @@ export function resolveAttacks(attacker: Machine, defender: Machine): void {
     applyImpulse(attacker, Vector.mult(recoilDir, weapon.part.recoil));
 
     const hitPos = defender.chassisBody.position;
-    attacker.events.push({ type: 'attack-fire', kind: weapon.part.kind, from: attacker.side });
+    const muzzlePos = attacker.weaponWorldPosition(weapon.mount);
+    attacker.events.push({
+      type: 'attack-fire',
+      kind: weapon.part.kind,
+      from: attacker.side,
+      x: muzzlePos.x,
+      y: muzzlePos.y,
+    });
     defender.events.push({
       type: 'hit',
       kind: weapon.part.kind,

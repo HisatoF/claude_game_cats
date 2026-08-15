@@ -22,6 +22,20 @@ export const GarageScreen: SceneRenderer = (root, ctx) => {
         </div>
         <button id="btn-battle" class="btn btn-primary btn-large">BATTLE&nbsp;▶</button>
       </header>
+      ${
+        state.hasSeenGarageTutorial
+          ? ''
+          : `
+      <div class="tutorial-banner" id="tutorial-banner">
+        <div class="tutorial-banner-steps">
+          <span><b>①組む</b>車体・車輪・武器を選ぶ</span>
+          <span><b>②予想する</b>安定性と重量を確認する</span>
+          <span><b>③観戦する</b>BATTLEで自動戦闘を見守る</span>
+          <span><b>④強化する</b>勝利報酬でパーツを増やす</span>
+        </div>
+        <button id="tutorial-dismiss" class="tutorial-dismiss">わかった</button>
+      </div>`
+      }
       <div class="garage-body">
         <div class="preview-panel">
           <canvas id="preview-canvas" width="360" height="240"></canvas>
@@ -226,10 +240,19 @@ export const GarageScreen: SceneRenderer = (root, ctx) => {
   };
   battleBtn.addEventListener('click', onBattleClick);
 
+  const tutorialDismiss = root.querySelector<HTMLButtonElement>('#tutorial-dismiss');
+  const onTutorialDismiss = () => {
+    soundManager.play('ui-click');
+    state.hasSeenGarageTutorial = true;
+    root.querySelector('#tutorial-banner')?.remove();
+  };
+  tutorialDismiss?.addEventListener('click', onTutorialDismiss);
+
   renderAll();
 
   return () => {
     tabsEl.removeEventListener('click', onTabClick);
     battleBtn.removeEventListener('click', onBattleClick);
+    tutorialDismiss?.removeEventListener('click', onTutorialDismiss);
   };
 };

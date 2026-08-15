@@ -86,7 +86,7 @@ export class Machine {
 }
 
 export type MachineCombatEvent =
-  | { type: 'attack-fire'; kind: WeaponPart['kind']; from: Side }
+  | { type: 'attack-fire'; kind: WeaponPart['kind']; from: Side; x: number; y: number }
   | { type: 'hit'; kind: WeaponPart['kind']; from: Side; amount: number; x: number; y: number }
   | { type: 'flip-warning'; from: Side }
   | { type: 'ko'; from: Side; reason: 'ko' | 'flipped' };
