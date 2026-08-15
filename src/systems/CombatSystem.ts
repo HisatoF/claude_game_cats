@@ -52,7 +52,13 @@ export function resolveAttacks(attacker: Machine, defender: Machine): void {
   const facing = attacker.side === 'player' ? 1 : -1;
   const dx = defender.chassisBody.position.x - attacker.chassisBody.position.x;
   const dy = defender.chassisBody.position.y - attacker.chassisBody.position.y;
-  const dist = Math.hypot(dx, dy);
+  const centerDist = Math.hypot(dx, dy);
+  // 車体の半幅を差し引いた「車体表面同士の距離」で射程判定する。
+  // 中心間距離のままだと、車体の半幅の合計(最小でも68px程度)が
+  // 近接武器の射程(48px前後)を上回ってしまい、車体同士がどれだけ
+  // 密着しても命中しないという致命的な不具合になるため。
+  const hullGap = attacker.chassisPart.size.width / 2 + defender.chassisPart.size.width / 2;
+  const dist = Math.max(0, centerDist - hullGap);
 
   for (const weapon of attacker.weapons) {
     if (weapon.cooldownRemaining > 0) continue;
@@ -98,7 +104,14 @@ export function resolveAttacks(attacker: Machine, defender: Machine): void {
     applyImpulse(attacker, Vector.mult(recoilDir, weapon.part.recoil));
 
     const hitPos = defender.chassisBody.position;
-    attacker.events.push({ type: 'attack-fire', kind: weapon.part.kind, from: attacker.side });
+    const muzzlePos = attacker.weaponWorldPosition(weapon.mount);
+    attacker.events.push({
+      type: 'attack-fire',
+      kind: weapon.part.kind,
+      from: attacker.side,
+      x: muzzlePos.x,
+      y: muzzlePos.y,
+    });
     defender.events.push({
       type: 'hit',
       kind: weapon.part.kind,

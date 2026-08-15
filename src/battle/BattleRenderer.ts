@@ -7,7 +7,25 @@ interface Effect {
   y: number;
   createdAt: number;
   ttl: number;
-  kind: 'hit' | 'ko' | 'fire' | 'flip';
+  kind: 'hit' | 'ko' | 'flip';
+  color: string;
+}
+
+interface ProjectileEffect {
+  x: number;
+  y: number;
+  dirX: number;
+  createdAt: number;
+  ttl: number;
+}
+
+interface Spark {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  createdAt: number;
+  ttl: number;
   color: string;
 }
 
@@ -19,6 +37,8 @@ const SIDE_COLOR: Record<'player' | 'cpu', { body: string; accent: string }> = {
 export class BattleRenderer {
   private ctx: CanvasRenderingContext2D;
   private effects: Effect[] = [];
+  private projectiles: ProjectileEffect[] = [];
+  private sparks: Spark[] = [];
 
   constructor(canvas: HTMLCanvasElement) {
     canvas.width = ARENA_WIDTH;
@@ -37,6 +57,27 @@ export class BattleRenderer {
   private addEffect(side: 'player' | 'cpu', event: MachineCombatEvent, now: number): void {
     if (event.type === 'hit') {
       this.effects.push({ x: event.x, y: event.y, createdAt: now, ttl: 260, kind: 'hit', color: '#fff35c' });
+      for (let i = 0; i < 7; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1.2 + Math.random() * 2.2;
+        this.sparks.push({
+          x: event.x,
+          y: event.y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          createdAt: now,
+          ttl: 300 + Math.random() * 200,
+          color: '#fff35c',
+        });
+      }
+    } else if (event.type === 'attack-fire' && event.kind === 'forward') {
+      this.projectiles.push({
+        x: event.x,
+        y: event.y,
+        dirX: side === 'player' ? 1 : -1,
+        createdAt: now,
+        ttl: 260,
+      });
     } else if (event.type === 'ko') {
       this.effects.push({
         x: side === 'player' ? ARENA_WIDTH * 0.22 : ARENA_WIDTH * 0.78,
@@ -46,6 +87,19 @@ export class BattleRenderer {
         kind: 'ko',
         color: '#ff4c4c',
       });
+      for (let i = 0; i < 16; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1.5 + Math.random() * 3.5;
+        this.sparks.push({
+          x: side === 'player' ? ARENA_WIDTH * 0.22 : ARENA_WIDTH * 0.78,
+          y: GROUND_Y - 40,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 1,
+          createdAt: now,
+          ttl: 500 + Math.random() * 300,
+          color: '#ff8a4c',
+        });
+      }
     }
   }
 
@@ -53,9 +107,11 @@ export class BattleRenderer {
     const { ctx } = this;
     this.drawBackground();
     this.drawArena();
+    this.drawProjectiles(now);
     this.drawMachine(sim.player, now);
     this.drawMachine(sim.cpu, now);
     this.drawEffects(now);
+    this.drawSparks(now);
     this.drawHud(sim);
     ctx.restore?.();
   }
@@ -218,6 +274,51 @@ export class BattleRenderer {
       const radius = e.kind === 'ko' ? 20 + t * 60 : 6 + t * 26;
       ctx.arc(e.x, e.y, radius, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  private drawProjectiles(now: number): void {
+    const { ctx } = this;
+    this.projectiles = this.projectiles.filter((p) => now - p.createdAt < p.ttl);
+    for (const p of this.projectiles) {
+      const t = (now - p.createdAt) / p.ttl;
+      const travel = t * 260;
+      const headX = p.x + p.dirX * travel;
+      const tailX = p.x + p.dirX * Math.max(0, travel - 26);
+      ctx.save();
+      ctx.globalAlpha = 1 - t * 0.6;
+      const grad = ctx.createLinearGradient(tailX, p.y, headX, p.y);
+      grad.addColorStop(0, 'rgba(255,255,255,0)');
+      grad.addColorStop(1, '#9be8ff');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(tailX, p.y);
+      ctx.lineTo(headX, p.y);
+      ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(headX, p.y, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  private drawSparks(now: number): void {
+    const { ctx } = this;
+    this.sparks = this.sparks.filter((s) => now - s.createdAt < s.ttl);
+    for (const s of this.sparks) {
+      const t = (now - s.createdAt) / s.ttl;
+      const x = s.x + s.vx * (t * 40);
+      const y = s.y + s.vy * (t * 40) + t * t * 30; // 重力っぽい落下
+      ctx.save();
+      ctx.globalAlpha = 1 - t;
+      ctx.fillStyle = s.color;
+      ctx.beginPath();
+      ctx.arc(x, y, 2.2, 0, Math.PI * 2);
+      ctx.fill();
       ctx.restore();
     }
   }

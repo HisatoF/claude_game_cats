@@ -19,6 +19,7 @@ export interface LastBattleSummary {
   damageTaken: number;
   rewardPartIds: string[];
   opponentName: string;
+  allCleared: boolean;
 }
 
 /**
@@ -34,6 +35,7 @@ export class GameState {
   opponentIndex = 0;
   wins = 0;
   lastBattle: LastBattleSummary | null = null;
+  hasSeenGarageTutorial = false;
 
   isUnlocked(partId: string): boolean {
     return this.unlockedPartIds.has(partId);
